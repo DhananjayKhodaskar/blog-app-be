@@ -20,8 +20,29 @@ router.post("/", authenticateToken, async (req, res) => {
 // Get all blog posts
 router.get("/", async (req, res) => {
   try {
-    const posts = await Post.find().populate("author", "username");
-    res.json(posts);
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+
+    const startIndex = (page - 1) * limit;
+
+    const posts = await Post.find()
+      .populate("author", "username")
+      .skip(startIndex)
+      .limit(limit);
+
+    const totalPosts = await Post.countDocuments();
+    const totalPages = Math.ceil(totalPosts / limit);
+
+    const hasNextPage = page < totalPages;
+
+    res.json({
+      currentPage: page,
+      totalPages,
+      totalPosts,
+      postsPerPage: limit,
+      hasNextPage,
+      posts,
+    });
   } catch (error) {
     res.status(500).json({ error: "Error fetching posts" });
   }
