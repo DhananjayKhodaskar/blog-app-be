@@ -96,4 +96,32 @@ router.delete("/:id", authenticateToken, async (req, res) => {
   }
 });
 
+// Like/Unlike a blog post
+router.post("/:id/toggle-like", authenticateToken, async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+    if (!post) return res.status(404).json({ error: "Post not found" });
+
+    const userId = req.user.userId;
+
+    const isPostLiked = post.likes.includes(userId);
+
+    if (isPostLiked) {
+      post.likes = post.likes.filter((id) => id.toString() !== userId);
+      await post.save();
+      return res.status(200).json({
+        message: "Post unliked successfully",
+      });
+    } else {
+      post.likes.push(userId);
+      await post.save();
+      return res.json({
+        message: "Post liked successfully",
+      });
+    }
+  } catch (error) {
+    res.status(500).json({ error: "Error toggling like on post" });
+  }
+});
+
 module.exports = router;
