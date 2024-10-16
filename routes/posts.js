@@ -51,10 +51,9 @@ router.get("/", async (req, res) => {
 // Get a single blog post
 router.get("/:id", async (req, res) => {
   try {
-    const post = await Post.findById(req.params.id).populate(
-      "author",
-      "username"
-    );
+    const post = await Post.findById(req.params.id)
+      .populate("author", "username")
+      .populate("comments.author", "username");
     if (!post) return res.status(404).json({ error: "Post not found" });
     res.json(post);
   } catch (error) {
@@ -121,6 +120,44 @@ router.post("/:id/toggle-like", authenticateToken, async (req, res) => {
     }
   } catch (error) {
     res.status(500).json({ error: "Error toggling like on post" });
+  }
+});
+
+// Add a comment to a blog post
+router.post("/:id/comments", authenticateToken, async (req, res) => {
+  try {
+    const { content } = req.body;
+    const post = await Post.findById(req.params.id);
+    if (!post) return res.status(404).json({ error: "Post not found" });
+
+    const newComment = {
+      content,
+      author: req.user.userId,
+    };
+
+    post.comments.push(newComment);
+    await post.save();
+
+    res
+      .status(201)
+      .json({ message: "Comment added successfully", comment: newComment });
+  } catch (error) {
+    console.log("Error adding comment", error);
+    res.status(500).json({ error: "Error adding comment" });
+  }
+});
+
+// Get a single blog post with comments
+router.get("/:id", async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id)
+      .populate("author", "username")
+      .populate("comments.author", "username"); // Populate author in comments
+
+    if (!post) return res.status(404).json({ error: "Post not found" });
+    res.json(post);
+  } catch (error) {
+    res.status(500).json({ error: "Error fetching post" });
   }
 });
 
