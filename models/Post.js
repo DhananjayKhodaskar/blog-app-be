@@ -1,4 +1,3 @@
-// post.model.js
 const mongoose = require("mongoose");
 const CommentSchema = require("./Comment");
 
